@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+  <title>Kinder Anwesenheit</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --group1: #FF6B6B;
+      --group1-light: #FFE5E5;
+      --group1-dark: #e04f4f;
+      --group2: #4ECDC4;
+      --group2-light: #E0F7F6;
+      --group2-dark: #35aaa2;
+      --bg: #FFF9F0;
+      --text: #2D3436;
+      --muted: #a0a0a0;
+      --card-bg: #ffffff;
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+      --app-height: 100vh;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Nunito', Arial, sans-serif;
+      background: var(--bg);
+      height: var(--app-height);
+      overflow: hidden;
+      color: var(--text);
+      -webkit-text-size-adjust: 100%;
+      overscroll-behavior: none;
+    }
+
+    .app-shell {
+      height: var(--app-height);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: calc(24px + env(safe-area-inset-top)) 16px calc(60px + env(safe-area-inset-bottom));
+      scroll-padding-top: calc(24px + env(safe-area-inset-top));
+      scroll-padding-bottom: calc(140px + env(safe-area-inset-bottom));
+    }
+
+    h1 {
+      font-family: 'Fredoka One', cursive;
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 6px;
+      color: var(--text);
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    .groups {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 860px;
+      margin: 0 auto 28px;
+    }
+
+    @media (max-width: 600px) {
+      .groups { grid-template-columns: 1fr; }
+    }
+
+    .group-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .group-header {
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .group-1 .group-header {
+      background: var(--group1-light);
+      border-bottom: 3px solid var(--group1);
+    }
+
+    .group-2 .group-header {
+      background: var(--group2-light);
+      border-bottom: 3px solid var(--group2);
+    }
+
+    .group-name-input {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.15rem;
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 160px;
+      cursor: pointer;
+    }
+
+    .group-1 .group-name-input { color: var(--group1-dark); }
+    .group-2 .group-name-input { color: var(--group2-dark); }
+
+    .badge {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.4rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .group-1 .badge { background: var(--group1); color: white; }
+    .group-2 .badge { background: var(--group2); color: white; }
+
+    .group-body { padding: 14px 16px; }
+
+    .add-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .name-input {
+      flex: 1;
+      padding: 11px 14px;
+      border-radius: 50px;
+      border: 2px solid #eee;
+      font-family: 'Nunito', Arial, sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      outline: none;
+      background: var(--bg);
+      min-width: 0;
+    }
+
+    .group-1 .name-input:focus { border-color: var(--group1); }
+    .group-2 .name-input:focus { border-color: var(--group2); }
+
+    .add-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .group-1 .add-btn { background: var(--group1); color: white; }
+    .group-2 .add-btn { background: var(--group2); color: white; }
+
+    .children-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .child-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      cursor: pointer;
+      user-select: none;
+      border: 2px solid transparent;
+      min-height: 48px;
+    }
+
+    .group-1 .child-item.present { background: var(--group1-light); }
+    .group-2 .child-item.present { background: var(--group2-light); }
+    .child-item:not(.present) { background: #F8F8F8; }
+
+    .check-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      font-weight: bold;
+    }
+
+    .present .check-circle {
+      border-color: transparent;
+      color: white;
+    }
+
+    .group-1 .present .check-circle { background: var(--group1); }
+    .group-2 .present .check-circle { background: var(--group2); }
+
+    .child-name {
+      flex: 1;
+      font-size: 1rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .child-item:not(.present) .child-name { opacity: 0.55; }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #bbb;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 8px;
+      border-radius: 8px;
+      line-height: 1;
+    }
+
+    .summary-bar {
+      max-width: 860px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 18px 26px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      flex: 1;
+      min-width: 80px;
+    }
+
+    .summary-number {
+      font-family: 'Fredoka One', cursive;
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .summary-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
+    }
+
+    .summary-divider {
+      width: 2px;
+      height: 40px;
+      background: #eee;
+      border-radius: 2px;
+    }
+
+    .s1 { color: var(--group1); }
+    .s2 { color: var(--group2); }
+    .stotal { color: var(--text); }
+
+    .empty-hint {
+      text-align: center;
+      color: #ccc;
+      font-size: 0.85rem;
+      padding: 10px 0 4px;
+      font-style: italic;
+    }
+
+    .reset-bar {
+      max-width: 860px;
+      margin: 16px auto 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .reset-btn {
+      background: white;
+      border: 2px solid #eee;
+      border-radius: 50px;
+      padding: 12px 22px;
+      font-family: 'Nunito', Arial, sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #888;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .last-reset {
+      font-size: 0.78rem;
+      color: #bbb;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+  <h1>🍽️ Essensgruppen</h1>
+  <p class="subtitle" id="dateDisplay"></p>
+
+  <div class="groups">
+    <div class="group-card group-1">
+      <div class="group-header">
+        <input class="group-name-input" id="title1" value="Gruppe 1" title="Gruppenname bearbeiten">
+        <div class="badge" id="badge1">0</div>
+      </div>
+      <div class="group-body">
+        <div class="add-row">
+          <input class="name-input" id="input1" type="text" placeholder="Name eingeben...">
+          <button class="add-btn" onclick="addChild(1)" title="Hinzufügen">+</button>
+        </div>
+        <div class="children-list" id="list1"></div>
+        <p class="empty-hint" id="hint1">Noch keine Kinder hinzugefügt</p>
+      </div>
+    </div>
+
+    <div class="group-card group-2">
+      <div class="group-header">
+        <input class="group-name-input" id="title2" value="Gruppe 2" title="Gruppenname bearbeiten">
+        <div class="badge" id="badge2">0</div>
+      </div>
+      <div class="group-body">
+        <div class="add-row">
+          <input class="name-input" id="input2" type="text" placeholder="Name eingeben...">
+          <button class="add-btn" onclick="addChild(2)" title="Hinzufügen">+</button>
+        </div>
+        <div class="children-list" id="list2"></div>
+        <p class="empty-hint" id="hint2">Noch keine Kinder hinzugefügt</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-item">
+      <span class="summary-number s1" id="sum1">0</span>
+      <span class="summary-label" id="sumLabel1">Gruppe 1</span>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-item">
+      <span class="summary-number s2" id="sum2">0</span>
+      <span class="summary-label" id="sumLabel2">Gruppe 2</span>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-item">
+      <span class="summary-number stotal" id="sumTotal">0</span>
+      <span class="summary-label">Gesamt</span>
+    </div>
+  </div>
+
+  <div class="reset-bar">
+    <button class="reset-btn" onclick="resetDay()">🔄 Alle Häkchen zurücksetzen</button>
+    <span class="last-reset" id="lastResetLabel"></span>
+  </div>
+
+  </div>
+
+  <script>
+    const state = { 1: [], 2: [] };
+
+    function updateAppHeight() {
+      const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', viewportHeight + 'px');
+    }
+
+    function keepInputVisible(input) {
+      setTimeout(function() {
+        input.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+      }, 80);
+    }
+
+    function todayStr() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '';
+      const parts = iso.split('-');
+      return parts[2] + '.' + parts[1] + '.' + parts[0];
+    }
+
+    function updateDateDisplay() {
+      const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+      const now = new Date();
+      document.getElementById('dateDisplay').textContent =
+        days[now.getDay()] + ', ' + now.toLocaleDateString('de-DE', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        });
+    }
+
+    function updateLastResetLabel(dateStr) {
+      const el = document.getElementById('lastResetLabel');
+      if (dateStr === todayStr()) {
+        el.textContent = 'Heute zurückgesetzt';
+      } else if (dateStr) {
+        el.textContent = 'Zuletzt: ' + formatDate(dateStr);
+      } else {
+        el.textContent = '';
+      }
+    }
+
+    function save(lastReset) {
+      const stored = JSON.parse(localStorage.getItem('essensgruppen') || '{}');
+      localStorage.setItem('essensgruppen', JSON.stringify({
+        state: state,
+        title1: document.getElementById('title1').value,
+        title2: document.getElementById('title2').value,
+        lastReset: lastReset !== undefined ? lastReset : (stored.lastReset || todayStr())
+      }));
+    }
+
+    function load() {
+      updateDateDisplay();
+
+      try {
+        const d = JSON.parse(localStorage.getItem('essensgruppen'));
+
+        if (d) {
+          if (d.state) {
+            state[1] = d.state[1] || [];
+            state[2] = d.state[2] || [];
+          }
+
+          if (d.title1) {
+            document.getElementById('title1').value = d.title1;
+            document.getElementById('sumLabel1').textContent = d.title1;
+          }
+
+          if (d.title2) {
+            document.getElementById('title2').value = d.title2;
+            document.getElementById('sumLabel2').textContent = d.title2;
+          }
+
+          if ((d.lastReset || '') !== todayStr()) {
+            [1, 2].forEach(function(group) {
+              state[group].forEach(function(child) {
+                child.present = false;
+              });
+            });
+            save(todayStr());
+            updateLastResetLabel(todayStr());
+          } else {
+            updateLastResetLabel(d.lastReset);
+          }
+        }
+      } catch (e) {
+        console.log('Daten konnten nicht geladen werden:', e);
+      }
+
+      render(1);
+      render(2);
+    }
+
+    function resetDay() {
+      if (!confirm('Alle Häkchen zurücksetzen?')) return;
+      [1, 2].forEach(function(group) {
+        state[group].forEach(function(child) {
+          child.present = false;
+        });
+        render(group);
+      });
+      save(todayStr());
+      updateLastResetLabel(todayStr());
+    }
+
+    function addChild(group) {
+      const inp = document.getElementById('input' + group);
+      const name = inp.value.trim();
+      if (!name) return;
+
+      state[group].push({ name: name, present: false });
+      inp.value = '';
+      inp.focus();
+      render(group);
+      save();
+    }
+
+    function toggleChild(group, idx) {
+      state[group][idx].present = !state[group][idx].present;
+      render(group);
+      save();
+    }
+
+    function deleteChild(group, idx) {
+      if (!confirm('Dieses Kind entfernen?')) return;
+      state[group].splice(idx, 1);
+      render(group);
+      save();
+    }
+
+    function render(group) {
+      const list = document.getElementById('list' + group);
+      const hint = document.getElementById('hint' + group);
+      const children = state[group];
+
+      list.innerHTML = '';
+      hint.style.display = children.length === 0 ? 'block' : 'none';
+
+      children.forEach(function(child, idx) {
+        const item = document.createElement('div');
+        item.className = 'child-item' + (child.present ? ' present' : '');
+
+        const check = document.createElement('div');
+        check.className = 'check-circle';
+        check.textContent = child.present ? '✓' : '';
+
+        const name = document.createElement('span');
+        name.className = 'child-name';
+        name.textContent = child.name;
+
+        const del = document.createElement('button');
+        del.className = 'delete-btn';
+        del.title = 'Entfernen';
+        del.textContent = '✕';
+
+        item.addEventListener('click', function() {
+          toggleChild(group, idx);
+        });
+
+        del.addEventListener('click', function(event) {
+          event.stopPropagation();
+          deleteChild(group, idx);
+        });
+
+        item.appendChild(check);
+        item.appendChild(name);
+        item.appendChild(del);
+        list.appendChild(item);
+      });
+
+      updateSummary();
+    }
+
+    function updateSummary() {
+      const p1 = state[1].filter(function(child) { return child.present; }).length;
+      const p2 = state[2].filter(function(child) { return child.present; }).length;
+
+      document.getElementById('badge1').textContent = p1;
+      document.getElementById('badge2').textContent = p2;
+      document.getElementById('sum1').textContent = p1;
+      document.getElementById('sum2').textContent = p2;
+      document.getElementById('sumTotal').textContent = p1 + p2;
+    }
+
+    ['title1', 'title2'].forEach(function(id, index) {
+      document.getElementById(id).addEventListener('input', function() {
+        const groupNumber = index + 1;
+        const title = document.getElementById(id).value || ('Gruppe ' + groupNumber);
+        document.getElementById('sumLabel' + groupNumber).textContent = title;
+        save();
+      });
+    });
+
+    [1, 2].forEach(function(group) {
+      document.getElementById('input' + group).addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') addChild(group);
+      });
+    });
+
+    updateAppHeight();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateAppHeight);
+      window.visualViewport.addEventListener('scroll', updateAppHeight);
+    } else {
+      window.addEventListener('resize', updateAppHeight);
+    }
+
+    document.querySelectorAll('input').forEach(function(input) {
+      input.addEventListener('focus', function() {
+        keepInputVisible(input);
+      });
+    });
+
+    load();
+  </script>
+</body>
+</html>
